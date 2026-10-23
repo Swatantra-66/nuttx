@@ -118,8 +118,17 @@ void uart_xmitchars_dma(FAR uart_dev_t *dev)
     {
       xfer->buffer  = &dev->xmit.buffer[dev->xmit.tail];
       xfer->length  = dev->xmit.size - dev->xmit.tail;
-      xfer->nbuffer = dev->xmit.buffer;
-      xfer->nlength = dev->xmit.head;
+
+      if (dev->xmit.head > 0)
+        {
+          xfer->nbuffer = dev->xmit.buffer;
+          xfer->nlength = dev->xmit.head;
+        }
+      else
+        {
+          xfer->nbuffer = NULL;
+          xfer->nlength = 0;
+        }
     }
 
   uart_dmasend(dev);
@@ -157,8 +166,11 @@ void uart_xmitchars_done(FAR uart_dev_t *dev)
 
   /* Reset xmit buffer. */
 
-  xfer->nbytes = 0;
-  xfer->length = xfer->nlength = 0;
+  xfer->nbytes  = 0;
+  xfer->length  = 0;
+  xfer->nlength = 0;
+  xfer->buffer  = NULL;
+  xfer->nbuffer = NULL;
 
   /* If any bytes were removed from the buffer, inform any waiters there
    * there is space available.
